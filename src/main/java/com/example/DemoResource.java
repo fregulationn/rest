@@ -28,7 +28,7 @@ import org.springframework.util.Base64Utils;
 import javax.ws.rs.core.Context;
 
 @Component
-@Path("face/v1/faceset")
+@Path("face/v2/faceset/user")
 public class DemoResource {
     private static final Logger LOGGER = Logger.getLogger(DemoResource.class);
 
@@ -68,14 +68,29 @@ public class DemoResource {
 
 
     @POST
-    @Path("register")
+    @Path("add")
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, String> compare(@Context HttpServletRequest request) {
+        Map<String, String> result = new HashMap<String, String>();
+
         String imgStr2 = request.getParameter("images");
         byte[] imgData2 = Base64Utils.decodeFromString(imgStr2);
         Date dt = new Date(System.currentTimeMillis());
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmssSSS");
+
         File file = new File(System.getProperty("user.dir") + "/img/" + sdf.format(dt) + ".png");
+        //判断目标文件所在的目录是否存在
+        if(!file.getParentFile().exists()) {
+            //如果目标文件所在的目录不存在，则创建父目录
+            System.out.println("目标文件所在目录不存在，准备创建它！");
+            if(!file.getParentFile().mkdirs()) {
+                System.out.println("创建目标文件所在目录失败！");
+                result.put("error_code", "216616");
+                result.put("Id", UUID.randomUUID().toString().toUpperCase().replaceAll("-", ""));
+                result.put("error_msg", "make dir error");
+            }
+        }
+
         try {
 
             FileOutputStream fops = new FileOutputStream(file);
@@ -101,7 +116,7 @@ public class DemoResource {
         }
         byte[] feature = bout.toByteArray();
 
-        Map<String, String> result = new HashMap<String, String>();
+
         Face face = new Face(feature, file.getAbsolutePath());
 
         String uid = request.getParameter("uid");
@@ -116,7 +131,6 @@ public class DemoResource {
             result.put("error_msg", "image exist");
         }
 
-        System.out.println(feature_service.findByUId(uid).size());
 
         return result;
 

@@ -8,16 +8,18 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 
 
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 
-import java.util.Calendar;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.UUID;
+
 import org.apache.commons.io.FileUtils;
 import java.net.URLEncoder;
 
@@ -37,7 +39,7 @@ import com.example.data.device.FaceService;
 
 
 @Component
-@Path("/face/v1")
+@Path("/face/v2")
 public class FileUploadEndpoint {
 
     @Autowired
@@ -143,8 +145,8 @@ public class FileUploadEndpoint {
     }
 
     @POST
-    @Path("detect")
-    public void detect(@FormDataParam("file") InputStream uploadedInputStream,
+    @Path("detect_py")
+    public void detect_py(@FormDataParam("file") InputStream uploadedInputStream,
                        @FormDataParam("file") FormDataContentDisposition disposition,
                        @Context HttpServletResponse response)
             throws IOException {
@@ -251,6 +253,100 @@ public class FileUploadEndpoint {
         temDir.delete();
         file.delete();
 
+    }
+
+
+    @POST
+    @Path("multi-identify-batch")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Map multiIdentify(@Context HttpServletRequest request) {
+        Map<String,Object> res = new HashMap<>();
+        res.put("log_id", 73473737);
+        res.put("image_num", 1);
+
+        List<Object> result = new ArrayList<>();
+
+        Map<String,Object> res1 = new HashMap<>();
+        res1.put("group_id","test1");
+        res1.put("uid","u333333");
+        res1.put("user_info","Test User");
+        Map<String,Object> position = new HashMap<>();
+        position.put("left",726.99188232422);
+        position.put("top",288.37701416016);
+        position.put("height",42);
+        position.put("width",44);
+        position.put("degree",-4);
+        position.put("prob",0.91117089986801);
+        res1.put("position",position);
+        res1.put("scores",99.3);
+
+        result.add(res1);
+
+        Map<String,Object> rest2 = new HashMap<>();
+        rest2.put("group_id","test1");
+        rest2.put("uid","u2222222");
+        rest2.put("user_info","Test User");
+        Map<String,Object> position2 = new HashMap<>();
+        position2.put("left",726.99188232422);
+        position2.put("top",288.37701416016);
+        position2.put("height",42);
+        position2.put("width",44);
+        position2.put("degree",-4);
+        position2.put("prob",0.91117089986801);
+        rest2.put("position",position2);
+        rest2.put("scores",82.3);
+
+        result.add(rest2);
+        res.put("result_all", result);
+
+        return res;
+
+    }
+
+    @POST
+    @Path("detect")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Map detect(@Context HttpServletRequest request) {
+        Map<String,Object> res = new HashMap<>();
+        res.put("log_id", 73473737);
+        res.put("image_num", 1);
+
+        List<Object> result = new ArrayList<>();
+
+        Map<String,Object> res1 = new HashMap<>();
+        res1.put("group_id","test1");
+        res1.put("uid","u333333");
+        res1.put("user_info","Test User");
+        Map<String,Object> position = new HashMap<>();
+        position.put("left",726.99188232422);
+        position.put("top",288.37701416016);
+        position.put("height",42);
+        position.put("width",44);
+        position.put("degree",-4);
+        position.put("prob",0.91117089986801);
+        res1.put("position",position);
+        res1.put("scores",99.3);
+
+        result.add(res1);
+
+        Map<String,Object> rest2 = new HashMap<>();
+        rest2.put("group_id","test1");
+        rest2.put("uid","u2222222");
+        rest2.put("user_info","Test User");
+        Map<String,Object> position2 = new HashMap<>();
+        position2.put("left",726.99188232422);
+        position2.put("top",288.37701416016);
+        position2.put("height",42);
+        position2.put("width",44);
+        position2.put("degree",-4);
+        position2.put("prob",0.91117089986801);
+        rest2.put("position",position2);
+        rest2.put("scores",82.3);
+
+        result.add(rest2);
+        res.put("result_all", result);
+
+        return res;
     }
 
 

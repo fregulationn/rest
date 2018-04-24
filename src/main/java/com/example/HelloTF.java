@@ -27,7 +27,7 @@ public class HelloTF {
 
         long startTime = System.currentTimeMillis();
 
-        String modelfile = "D:\\Z\\code\\video_detect\\model\\20170512-110547\\20170512-110547.pb";
+        String modelfile = System.getProperty("user.dir") + "/model/"+"20170512-110547.pb";
         System.out.println(modelfile);
         byte[] graphDef = readAllBytesOrExit(Paths.get(modelfile));
         g = new Graph();

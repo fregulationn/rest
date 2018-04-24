@@ -10,7 +10,7 @@ import org.glassfish.jersey.media.multipart.MultiPartFeature;
 
 
 @Component
-@ApplicationPath("/rest/1.0")
+@ApplicationPath("/rest/2.0")
 public class JerseyConfig extends ResourceConfig {
 	public JerseyConfig() {
 		register(DemoResource.class);
