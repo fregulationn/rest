@@ -22,6 +22,6 @@
 hs_err_pid*
 
 # 忽略指定文件夹
-.idea
-img
-target
+.idea/
+img/
+target/
