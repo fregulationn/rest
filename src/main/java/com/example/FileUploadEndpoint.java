@@ -16,6 +16,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -36,6 +37,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.example.data.device.FaceService;
+import org.springframework.util.Base64Utils;
+
+import com.example.Rcnn;
 
 
 @Component
@@ -307,44 +311,38 @@ public class FileUploadEndpoint {
     @Path("detect")
     @Produces(MediaType.APPLICATION_JSON)
     public Map detect(@Context HttpServletRequest request) {
+        Map<String,String[]> request_value =request.getParameterMap();
+
+        String imgStr = request_value.get("image")[0];
+        byte[] imgData = Base64Utils.decodeFromString(imgStr);
+        int max_face_num = 1;
+        if(request_value.containsKey("max_face_num")) {
+            max_face_num = Integer.parseInt(request.getParameter("max_face_num"));
+        }
+
+        List<Object> detect_result = Rcnn.executeGraph(imgData);
+        float [][] box = (float[][])detect_result.get(0);
+        float [][] prob = (float[][])detect_result.get(1);
+
+
         Map<String,Object> res = new HashMap<>();
         res.put("log_id", 73473737);
-        res.put("image_num", 1);
+        res.put("result_num", max_face_num);
 
         List<Object> result = new ArrayList<>();
+        for (int i = 0; i < max_face_num; i++) {
+            Map<String,Object> res_tmp = new HashMap<>();
+            Map<String,Object> position = new HashMap<>();
+            position.put("left",box[i][1]);
+            position.put("top",box[i][0]);
+            position.put("height",box[i][2]-box[i][0]);
+            position.put("width",box[i][3]-box[i][1]);
 
-        Map<String,Object> res1 = new HashMap<>();
-        res1.put("group_id","test1");
-        res1.put("uid","u333333");
-        res1.put("user_info","Test User");
-        Map<String,Object> position = new HashMap<>();
-        position.put("left",726.99188232422);
-        position.put("top",288.37701416016);
-        position.put("height",42);
-        position.put("width",44);
-        position.put("degree",-4);
-        position.put("prob",0.91117089986801);
-        res1.put("position",position);
-        res1.put("scores",99.3);
-
-        result.add(res1);
-
-        Map<String,Object> rest2 = new HashMap<>();
-        rest2.put("group_id","test1");
-        rest2.put("uid","u2222222");
-        rest2.put("user_info","Test User");
-        Map<String,Object> position2 = new HashMap<>();
-        position2.put("left",726.99188232422);
-        position2.put("top",288.37701416016);
-        position2.put("height",42);
-        position2.put("width",44);
-        position2.put("degree",-4);
-        position2.put("prob",0.91117089986801);
-        rest2.put("position",position2);
-        rest2.put("scores",82.3);
-
-        result.add(rest2);
-        res.put("result_all", result);
+            res_tmp.put("location",position);
+            res_tmp.put("face_probability",prob[0][i]);
+            result.add(res_tmp);
+        }
+        res.put("result", result);
 
         return res;
     }
