@@ -3,11 +3,9 @@ package com.example;
 
 import com.example.data.device.FaceService;
 import com.example.data.domain.Face;
-import org.apache.commons.io.FileUtils;
+import com.example.face_library.FaceNet;
 import org.apache.log4j.Logger;
 import org.apache.tomcat.util.http.fileupload.ByteArrayOutputStream;
-import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
-import org.glassfish.jersey.media.multipart.FormDataParam;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
@@ -19,7 +17,6 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.io.*;
-import java.util.logging.Level;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -29,8 +26,8 @@ import javax.ws.rs.core.Context;
 
 @Component
 @Path("face/v2/faceset/user")
-public class DemoResource {
-    private static final Logger LOGGER = Logger.getLogger(DemoResource.class);
+public class FaceSet {
+    private static final Logger LOGGER = Logger.getLogger(FaceSet.class);
 
     @Autowired
     private FaceService feature_service;
@@ -105,7 +102,7 @@ public class DemoResource {
         org.apache.tomcat.util.http.fileupload.ByteArrayOutputStream bout = new ByteArrayOutputStream();
         try {
 
-            float[] feature = HelloTF.executeInceptionGraph1(file.getAbsolutePath());
+            float[] feature = FaceNet.executeInceptionGraph1(file.getAbsolutePath());
             DataOutputStream dout = new DataOutputStream(bout);
             for (float d : feature) {
                 dout.writeDouble(d);

@@ -1,4 +1,4 @@
-package com.example;
+package com.example.face_library;
 
 import org.tensorflow.Graph;
 import org.tensorflow.Session;
@@ -23,7 +23,7 @@ public class Rcnn {
     private static Session s;
     private static byte[][][] image ;
 
-    Rcnn() {
+    public Rcnn() {
         long startTime = System.currentTimeMillis();
         String modelfile = System.getProperty("user.dir") + "/model/"+"frozen_inference_graph_mobilenet_300.pb";
         System.out.println(modelfile);
@@ -130,17 +130,26 @@ public class Rcnn {
 
 
 
-    public static int byteToInt(byte b) {
-        //Java 总是把 byte 当做有符处理；我们可以通过将其和 0xFF 进行二进制与得到它的无符值
-        return b & 0xFF;
-    }
+//    public static int byteToInt(byte b) {
+//        //Java 总是把 byte 当做有符处理；我们可以通过将其和 0xFF 进行二进制与得到它的无符值
+//        return b & 0xFF;
+//    }
+
+
+
+    /**
+     * 0:top
+     * 1:left
+     * 2:height
+     * 3:width
+     **/
     private static float[][] box_trans(float[][][] box) {
         float[][] res = new float[box[0].length][box[0][0].length];
         for (int i = 0; i < box[0].length; i++) {
             res[i][0] = image.length*box[0][i][0];
-            res[i][1] = image[0].length*box[0][i][1];
-            res[i][2] = image.length*box[0][i][2];
-            res[i][3] = image[0].length*box[0][i][3];
+            res[i][1] =image[0].length*box[0][i][1] ;
+            res[i][2] =image.length*box[0][i][2]-image.length*box[0][i][0] ;
+            res[i][3] = image[0].length*box[0][i][3]-image[0].length*box[0][i][1];
         }
         return res;
     }

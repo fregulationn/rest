@@ -13,7 +13,7 @@ import org.glassfish.jersey.media.multipart.MultiPartFeature;
 @ApplicationPath("/rest/2.0")
 public class JerseyConfig extends ResourceConfig {
 	public JerseyConfig() {
-		register(DemoResource.class);
+		register(FaceSet.class);
 		register(CorsFilter.class);
 		register(MultiPartFeature.class);
 		register(FileUploadEndpoint.class);

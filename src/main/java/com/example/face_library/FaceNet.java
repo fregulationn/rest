@@ -1,6 +1,7 @@
-package com.example;
+package com.example.face_library;
 
 
+import org.nd4j.linalg.util.ArrayUtil;
 import org.tensorflow.Graph;
 import org.tensorflow.Session;
 import org.tensorflow.Tensor;
@@ -15,7 +16,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 
-public class HelloTF {
+public class FaceNet {
 
     private static int BATCH_SIZE = 2;
     private final static int CHANNELS = 3;
@@ -23,11 +24,11 @@ public class HelloTF {
     private static Graph g;
     private static Session s;
 
-    HelloTF() {
+    public FaceNet() {
 
         long startTime = System.currentTimeMillis();
 
-        String modelfile = System.getProperty("user.dir") + "/model/"+"20170512-110547.pb";
+        String modelfile = System.getProperty("user.dir") + "/model/" + "20170512-110547.pb";
         System.out.println(modelfile);
         byte[] graphDef = readAllBytesOrExit(Paths.get(modelfile));
         g = new Graph();
@@ -134,8 +135,6 @@ public class HelloTF {
                         fetch("embeddings:0").run().get(0).expect(Float.class);
 
 
-
-
         float[][] output = result.copyTo(new float[BATCH_SIZE][emb_size]);
 
         double distance = 0;
@@ -194,6 +193,36 @@ public class HelloTF {
 
         float[][] output = result.copyTo(new float[BATCH_SIZE][emb_size]);
         return output[0];
+    }
+
+
+    /**
+     * embedding from 4-demension array(have been prewhited)
+     */
+    public static float[][] executeInceptionGraphPrewhite(float[][][][] prewhite, int list_size, int detect_top_num) {
+        int batch_size = list_size * detect_top_num;
+
+        float[] temp = ArrayUtil.flattenFloatArray(prewhite);
+//        for (int l = 0; l < batch_size; l++) {
+//            for (int i = 0; i < img_size; i++) {
+//                for (int j = 0; j < img_size; j++) {
+//                    for (int k = 0; k < CHANNELS; k++) {
+//                        int index = l*img_size*img_size*CHANNELS+i * img_size * CHANNELS + j * CHANNELS + k;
+//                        temp[index] = prewhite[l][i][j][k];
+//                    }
+//                }
+//            }
+//        }
+
+        long[] shape = new long[]{batch_size, img_size, img_size, CHANNELS};
+        Tensor<Float> imageTensor = Tensor.create(shape, FloatBuffer.wrap(temp));
+        Tensor<Boolean> phase_train = Tensor.create(false, Boolean.class);
+        Tensor<Float> result =
+                s.runner().feed("input:0", imageTensor).feed("phase_train:0", phase_train).
+                        fetch("embeddings:0").run().get(0).expect(Float.class);
+
+        float[][] output = result.copyTo(new float[batch_size][emb_size]);
+        return output;
     }
 
 
