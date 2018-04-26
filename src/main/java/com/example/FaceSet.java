@@ -105,7 +105,7 @@ public class FaceSet {
             float[] feature = FaceNet.executeInceptionGraph1(file.getAbsolutePath());
             DataOutputStream dout = new DataOutputStream(bout);
             for (float d : feature) {
-                dout.writeDouble(d);
+                dout.writeFloat(d);
             }
             dout.close();
         } catch (Exception e) {
@@ -119,10 +119,15 @@ public class FaceSet {
         String uid = request.getParameter("uid");
         String group_id = request.getParameter("group_id");
         String user_info = request.getParameter("user_info");
+
+//        feature_service.saveFace(face, uid, group_id, user_info);
+//        result.put("Id", UUID.randomUUID().toString().toUpperCase().replaceAll("-", ""));
+
         try {
             feature_service.saveFace(face, uid, group_id, user_info);
             result.put("Id", UUID.randomUUID().toString().toUpperCase().replaceAll("-", ""));
         } catch (Exception e) {
+            e.printStackTrace();
             result.put("error_code", "216616");
             result.put("Id", UUID.randomUUID().toString().toUpperCase().replaceAll("-", ""));
             result.put("error_msg", "image exist");

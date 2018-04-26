@@ -33,6 +33,13 @@ public class Face implements Serializable {
         this.imgPath = imgPath;
     }
 
+    public Face(Face face) {
+        super();
+        this.feature = face.feature;
+        this.imgPath = face.imgPath;
+        this.user = face.user;
+    }
+
     public int getId() {
         return id;
     }

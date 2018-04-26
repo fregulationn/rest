@@ -44,14 +44,18 @@ public class FaceService {
         User user;
         if (UserRepository.findByUId(uid) == null) {
             user = new User(uid, user_info);
+            System.out.println("can't find the user");
+
         } else {
             user = UserRepository.findByUId(uid);
+            System.out.println("find the user");
         }
 
         user.getFaces().add(face);
 
         Zu zu = null;
         for (Zu a : user.getZus()) {
+            System.out.println(a.getZuId());
             if (a.getZuId().equals(group_id)) {
                 zu = a;
                 break;
@@ -59,7 +63,14 @@ public class FaceService {
         }
 
         if (zu == null) {
-            zu = new Zu(group_id);
+            if (ZuRepository.findByZuId(group_id) == null) {
+                zu = new Zu(group_id);
+                System.out.println("can't find the zu");
+                ZuRepository.save(zu);
+            } else {
+                zu = ZuRepository.findByZuId(group_id);
+                System.out.println("find the zu");
+            }
             user.getZus().add(zu);
             zu.getUsers().add(user);
             System.out.println("out of contains");

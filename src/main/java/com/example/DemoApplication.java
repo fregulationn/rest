@@ -11,6 +11,7 @@ public class DemoApplication {
 	public static void main(String[] args) {
 		FaceNet tf = new FaceNet();
 		Rcnn rcnn = new Rcnn();
+		MultiIdentify mul = new MultiIdentify();
 		SpringApplication.run(DemoApplication.class, args);
 	}
 }

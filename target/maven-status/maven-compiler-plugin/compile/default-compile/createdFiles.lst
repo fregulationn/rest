@@ -11,5 +11,5 @@ com\example\data\device\UserService.class
 com\example\data\device\FaceService.class
 com\example\data\domain\User.class
 com\example\JerseyConfig.class
-com\example\DemoResource.class
+com\example\FaceSet.class
 com\example\CorsFilter.class

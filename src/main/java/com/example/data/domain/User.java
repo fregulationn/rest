@@ -24,14 +24,14 @@ public class User implements Serializable {
     @Column(nullable = false)
     private String userInfo;
 
-    @ManyToMany(cascade = CascadeType.ALL,fetch = FetchType.EAGER)
+    @ManyToMany(cascade ={CascadeType.MERGE, CascadeType.REFRESH},fetch = FetchType.EAGER)
     @JoinTable(name = "zu_user", joinColumns = {
             @JoinColumn(name = "userId", referencedColumnName = "id")}, inverseJoinColumns = {
             @JoinColumn(name = "zuId", referencedColumnName = "id")})
     private List<Zu> zus;
 
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "user", cascade = {CascadeType.MERGE, CascadeType.REFRESH}, fetch = FetchType.EAGER)
     //拥有mappedBy注解的实体类为关系被维护端
     //mappedBy="face"中的face是Face中的face属性
     private List<Face> faces;

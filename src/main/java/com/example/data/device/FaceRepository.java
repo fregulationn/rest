@@ -7,5 +7,5 @@ import com.example.data.domain.Face;
 import java.util.List;
 
 
-interface FaceRepository extends JpaRepository<Face, Long> {
+public interface FaceRepository extends JpaRepository<Face, Long> {
 }
