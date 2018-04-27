@@ -47,7 +47,7 @@ public class MultiIdentify {
 
 
     /**
-     * handle the result of detection ,then aligned,then embedding ,return the feature
+     * handle the result of detection ,then aligned,then embedding ,return the feature which have already been Pre-whiten
      **/
     public static float[][] handleResult(List<List<Object>> res_all, int[] detect_top) {
         int batch_size = 0;
