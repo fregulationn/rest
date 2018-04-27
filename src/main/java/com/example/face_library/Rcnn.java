@@ -76,7 +76,7 @@ public class Rcnn {
         return null;
     }
 
-    public static List executeGraph(byte[] img) {
+    public static List<Object> executeGraph(byte[] img) {
         long time = System.currentTimeMillis();
         Tensor<UInt8> imageTensor = makeImageTensor(img);
 

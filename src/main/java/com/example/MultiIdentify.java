@@ -1,14 +1,24 @@
 package com.example;
 
+import com.example.data.device.FaceRepository;
+import com.example.data.device.FaceService;
+import com.example.data.domain.Face;
 import org.apache.commons.io.FileUtils;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.imgcodecs.Imgcodecs;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.tensorflow.Graph;
 import org.tensorflow.Session;
 
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import com.example.face_library.*;
@@ -19,11 +29,15 @@ public class MultiIdentify {
     private final static int CHANNELS = 3;
     private static int img_size = 160;
     private static int margin = 4;
-    private static Graph g;
-    private static Session s;
 
+//    private static Graph g;
+//    private static Session s;
+//    private static List<Face> all_face;
+//    private static FaceRepository faceRepository;
 //    MultiIdentify() {
 ////        pre_resample();
+//        all_face = faceRepository.findAll();
+//        System.out.println(all_face.size());
 //    }
 
     static {
@@ -35,15 +49,20 @@ public class MultiIdentify {
     /**
      * handle the result of detection ,then aligned,then embedding ,return the feature
      **/
-    public static float[][] handleResult(List<List<Object>> res_all, int detect_top_num) {
-        int batch_size = res_all.size() * detect_top_num;
+    public static float[][] handleResult(List<List<Object>> res_all, int[] detect_top) {
+        int batch_size = 0;
+        for (int i = 0; i < res_all.size(); i++) {
+            batch_size += detect_top[i];
+        }
+        System.out.println(batch_size);
+
         float[][][][] prewhite = new float[batch_size][img_size][img_size][CHANNELS];
 
-
+        int index = 0;
         for (int i = 0; i < res_all.size(); i++) {
             float[][] box = (float[][]) res_all.get(i).get(0);
             byte[][][] image = (byte[][][]) res_all.get(i).get(4);
-            for (int j = 0; j < detect_top_num; j++) {
+            for (int j = 0; j < detect_top[i]; j++) {
                 int top = (int) Math.floor((double) box[j][0]);
                 int left = (int) Math.floor((double) box[j][1]);
                 int height = (int) Math.ceil((double) box[j][2]);
@@ -70,21 +89,20 @@ public class MultiIdentify {
                 FaceAffineTransform faceAffineTransform = new FaceAffineTransform(img_size);
                 Mat imageAligned = faceAffineTransform.processImage(img_mat, points);
 
-
                 String filename = "img/faceAffineTransform" + Integer.toString(i * 2 + j) + ".png";
                 System.out.println(String.format("Writing %s", filename));
                 Imgcodecs.imwrite(filename, imageAligned);
 
-                prewhite[i*detect_top_num+j] = prewhite(imageAligned);
+                prewhite[index] = prewhite(imageAligned);
+                ++ index;
 
 //                long endTime = System.currentTimeMillis();
 //                float seconds = (endTime - startTime) / 1000F;
 //                System.out.println("align:" + Float.toString(seconds) + " seconds.");
             }
-
         }
 
-        float[][] res = FaceNet.executeInceptionGraphPrewhite(prewhite,res_all.size(),detect_top_num);
+        float[][] res = FaceNet.executeInceptionGraphPrewhite(prewhite);
         System.out.println("OK");
         return res;
     }
@@ -146,29 +164,69 @@ public class MultiIdentify {
     }
 
 
-//    public static void main(String[] args) throws Exception {
-//        long startTime = System.currentTimeMillis();
-//        Rcnn Rcnn = new Rcnn();
-//        String filePath = "D:\\Z\\1.jpg";
-//        File file = new File(filePath);
-//        byte[] imgData = FileUtils.readFileToByteArray(file);
-//
-//        MultiIdentify test = new MultiIdentify();
-//        FaceNet facenet = new FaceNet();
-//
-//        List<Object> res = Rcnn.executeGraph(imgData);
-//        List<List<Object>> res_all = new ArrayList<>();
-//        res_all.add(res);
-//        res_all.add(res);
-//
-//        int detect_top_num = 2;
-//        int user_top_num = 2;
-//        handleResult(res_all, detect_top_num, user_top_num);
-//
-//        long endTime = System.currentTimeMillis();
-//        float seconds = (endTime - startTime) / 1000F;
-//        System.out.println("load model:" + Float.toString(seconds) + " seconds.");
-//    }
+    public static float get_score(float[] face_feature, Face f) {
+        float res = 0;
+
+        float[] feature = new float[128];
+        try {
+            byte[] asBytes = f.getFeature();
+            ByteArrayInputStream bin = new ByteArrayInputStream(asBytes);
+            DataInputStream din = new DataInputStream(bin);
+            for (int i = 0; i < feature.length; i++) {
+                feature[i] = din.readFloat();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+//        System.out.println(face_feature.length);
+        for (int i = 0; i < face_feature.length; i++) {
+            res += feature[i] * face_feature[i];
+        }
+        res = (float) Math.sin((double) res);
+
+        return res;
+    }
+
+
+    public static List<Face> multi_Identify(List<Face> all_face,float[]face_feature, int user_top_num) {
+        List<Face> res = new ArrayList<>();
+
+//        List<Face> tmp = all_face.
+        Comparator<Face> comparator = new Comparator<Face>() {
+            public int compare(Face f1, Face f2) {
+                float score1 = get_score(face_feature,f1);
+                float score2 = get_score(face_feature,f2);
+
+                if (score1 < score2) {
+                    return 1;
+                } else if (score1 > score2) {
+                    return -1;
+                } else {
+                    return 0;
+                }
+            }
+        };
+
+        Collections.sort(all_face,comparator);
+
+        for (int i = 0; i < user_top_num; i++) {
+            res.add(all_face.get(i));
+        }
+        return res;
+    }
+
+    public static List<Face> multi_Identify(List<Face> all_face,float[][] face_feature, int user_top_num) {
+        List<Face> res = new ArrayList<>();
+        for (int i = 0; i < face_feature.length; i++) {
+            List<Face> tmp = multi_Identify(all_face,face_feature[i], user_top_num);
+            for (Face item : tmp) res.add(new Face(item));
+        }
+        return res;
+    }
+
+
+
 
 //    private static void pre_resample() {
 //        try {
@@ -248,6 +306,35 @@ public class MultiIdentify {
 //
 //    public static double getUint8(byte s) {
 //        return (double) (s & 0x00ff);
+//    }
+
+    //    public static void main(String[] args) throws Exception {
+//        long startTime = System.currentTimeMillis();
+//        Rcnn Rcnn = new Rcnn();
+//        String filePath = "D:\\Z\\1.jpg";
+//        File file = new File(filePath);
+//        byte[] imgData = FileUtils.readFileToByteArray(file);
+//
+//        MultiIdentify test = new MultiIdentify();
+//        FaceNet facenet = new FaceNet();
+//
+//        List<Object> res = Rcnn.executeGraph(imgData);
+//        List<List<Object>> res_all = new ArrayList<>();
+//        res_all.add(res);
+//        res_all.add(res);
+//
+//        int detect_top_num = 2;
+//        int user_top_num = 2;
+//        float[][] face_feature =handleResult(res_all, detect_top_num);
+//
+//        List<Face> top_face = multi_Identify(face_feature,user_top_num);
+//        System.out.println(top_face);
+//
+//
+//
+//        long endTime = System.currentTimeMillis();
+//        float seconds = (endTime - startTime) / 1000F;
+//        System.out.println("load model:" + Float.toString(seconds) + " seconds.");
 //    }
 
 }

@@ -34,123 +34,9 @@ public class FaceNet {
         g = new Graph();
         g.importGraphDef(graphDef);
         s = new Session(g);
-
         long endTime = System.currentTimeMillis();
         float seconds = (endTime - startTime) / 1000F;
         System.out.println("load model:" + Float.toString(seconds) + " seconds.");
-    }
-
-
-    private static float[][][] getData(String path) {
-        try {
-            BufferedImage bimg = ImageIO.read(new File(path));
-            int[][][] data = new int[img_size][img_size][3];
-
-
-            float mean = 0, std, std_adj;
-            int num = img_size * img_size * 3, square_sum = 0;
-            float[][][] prewhite = new float[img_size][img_size][3];
-
-
-            //通过getRGB()方式获得像素矩阵
-            //此方式为沿Height方向扫描
-            for (int i = 0; i < img_size; i++) {
-                for (int j = 0; j < img_size; j++) {
-                    int rgb = bimg.getRGB(i, j);
-
-                    data[j][i][0] = (rgb & 0xff0000) >> 16;
-                    data[j][i][1] = (rgb & 0xff00) >> 8;
-                    data[j][i][2] = (rgb & 0xff);
-
-                    mean = mean + data[j][i][0] + data[j][i][1] + data[j][i][2];
-                    square_sum = square_sum + data[j][i][0] * data[j][i][0] +
-                            data[j][i][1] * data[j][i][1] + data[j][i][2] * data[j][i][2];
-
-//                    //输出一列数据比对
-//                    if (i == 156 && j == 0)
-//                        System.out.printf("%d\t%d\t%d\t", data[i][j][0], data[i][j][1], data[i][j][2]);
-                }
-            }
-
-            mean = mean / num;
-            std = (square_sum - num * mean * mean) / num;
-
-            std = (float) Math.sqrt(Math.abs(std));
-            float sqrt_num = (float) Math.sqrt(num);
-            std_adj = std > (1 / sqrt_num) ? std : (1 / sqrt_num);
-
-            for (int i = 0; i < img_size; i++) {
-                for (int j = 0; j < img_size; j++) {
-                    for (int k = 0; k < 3; k++) {
-                        prewhite[i][j][k] = (data[i][j][k] - mean) / std_adj;
-                    }
-                }
-            }
-
-            return prewhite;
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    public static double executeInceptionGraph(String path1, String path2) {
-        BATCH_SIZE = 2;
-
-        float[][][][] prewhite = new float[BATCH_SIZE][img_size][img_size][CHANNELS];
-
-        long time = System.currentTimeMillis();
-        prewhite[0] = getData(path1);
-        prewhite[1] = getData(path2);
-
-
-        float[] temp = new float[BATCH_SIZE * img_size * img_size * CHANNELS];
-        for (int b = 0; b < BATCH_SIZE; b++) {
-            for (int i = 0; i < img_size; i++) {
-                for (int j = 0; j < img_size; j++) {
-                    for (int k = 0; k < CHANNELS; k++) {
-                        int index = b * img_size * img_size * CHANNELS + i * img_size * CHANNELS + j * CHANNELS + k;
-                        temp[index] = prewhite[b][i][j][k];
-                    }
-                }
-            }
-        }
-
-
-        long[] shape = new long[]{BATCH_SIZE, img_size, img_size, CHANNELS};
-        Tensor<Float> imageTensor = Tensor.create(shape, FloatBuffer.wrap(temp));
-
-        long time1 = System.currentTimeMillis();
-        float seconds_pic = (time1 - time) / 1000F;
-        System.out.println("creat tensor:" + Float.toString(seconds_pic) + " seconds.");
-
-
-        Tensor<Boolean> phase_train = Tensor.create(false, Boolean.class);
-
-
-        // Generally, there may be multiple output tensors, all of them must be closed to prevent resource leaks.
-        Tensor<Float> result =
-                s.runner().feed("input:0", imageTensor).feed("phase_train:0", phase_train).
-                        fetch("embeddings:0").run().get(0).expect(Float.class);
-
-
-        float[][] output = result.copyTo(new float[BATCH_SIZE][emb_size]);
-
-        double distance = 0;
-        for (int m = 0; m < emb_size; m++) {
-            distance += (output[0][m] - output[1][m]) * (output[0][m] - output[1][m]);
-        }
-
-        distance = Math.sqrt(distance);
-
-
-        long time2 = System.currentTimeMillis();
-        float seconds_session = (time2 - time1) / 1000F;
-        System.out.println("embedding:" + Float.toString(seconds_session) + " seconds.");
-
-        return distance;
-
     }
 
     private static byte[] readAllBytesOrExit(Path path) {
@@ -163,44 +49,12 @@ public class FaceNet {
         return null;
     }
 
-    public static float[] executeInceptionGraph1(String path1) {
-        BATCH_SIZE = 1;
-        float[][][][] prewhite = new float[BATCH_SIZE][img_size][img_size][CHANNELS];
-        prewhite[0] = getData(path1);
-
-
-        float[] temp = new float[BATCH_SIZE * img_size * img_size * CHANNELS];
-
-        for (int i = 0; i < img_size; i++) {
-            for (int j = 0; j < img_size; j++) {
-                for (int k = 0; k < CHANNELS; k++) {
-                    int index = i * img_size * CHANNELS + j * CHANNELS + k;
-                    temp[index] = prewhite[0][i][j][k];
-                }
-            }
-        }
-
-        long[] shape = new long[]{BATCH_SIZE, img_size, img_size, CHANNELS};
-        Tensor<Float> imageTensor = Tensor.create(shape, FloatBuffer.wrap(temp));
-
-        Tensor<Boolean> phase_train = Tensor.create(false, Boolean.class);
-
-
-        // Generally, there may be multiple output tensors, all of them must be closed to prevent resource leaks.
-        Tensor<Float> result =
-                s.runner().feed("input:0", imageTensor).feed("phase_train:0", phase_train).
-                        fetch("embeddings:0").run().get(0).expect(Float.class);
-
-        float[][] output = result.copyTo(new float[BATCH_SIZE][emb_size]);
-        return output[0];
-    }
-
 
     /**
-     * embedding from 4-demension array(have been prewhited)
+     * embedding from 4-dimensions array which have already been Pre-whiten
      */
-    public static float[][] executeInceptionGraphPrewhite(float[][][][] prewhite, int list_size, int detect_top_num) {
-        int batch_size = list_size * detect_top_num;
+    public static float[][] executeInceptionGraphPrewhite(float[][][][] prewhite) {
+        int batch_size = prewhite.length;
 
         float[] temp = ArrayUtil.flattenFloatArray(prewhite);
 //        for (int l = 0; l < batch_size; l++) {
@@ -224,6 +78,158 @@ public class FaceNet {
         float[][] output = result.copyTo(new float[batch_size][emb_size]);
         return output;
     }
+
+    /**
+     * read a image form floder and return the pixel of image which have already been Pre-whiten
+     */
+//    private static float[][][] getData(String path) {
+//        try {
+//            BufferedImage bimg = ImageIO.read(new File(path));
+//            int[][][] data = new int[img_size][img_size][3];
+//
+//
+//            float mean = 0, std, std_adj;
+//            int num = img_size * img_size * 3, square_sum = 0;
+//            float[][][] prewhite = new float[img_size][img_size][3];
+//
+//
+//            //通过getRGB()方式获得像素矩阵
+//            //此方式为沿Height方向扫描
+//            for (int i = 0; i < img_size; i++) {
+//                for (int j = 0; j < img_size; j++) {
+//                    int rgb = bimg.getRGB(i, j);
+//
+//                    data[j][i][0] = (rgb & 0xff0000) >> 16;
+//                    data[j][i][1] = (rgb & 0xff00) >> 8;
+//                    data[j][i][2] = (rgb & 0xff);
+//
+//                    mean = mean + data[j][i][0] + data[j][i][1] + data[j][i][2];
+//                    square_sum = square_sum + data[j][i][0] * data[j][i][0] +
+//                            data[j][i][1] * data[j][i][1] + data[j][i][2] * data[j][i][2];
+//
+////                    //输出一列数据比对
+////                    if (i == 156 && j == 0)
+////                        System.out.printf("%d\t%d\t%d\t", data[i][j][0], data[i][j][1], data[i][j][2]);
+//                }
+//            }
+//
+//            mean = mean / num;
+//            std = (square_sum - num * mean * mean) / num;
+//
+//            std = (float) Math.sqrt(Math.abs(std));
+//            float sqrt_num = (float) Math.sqrt(num);
+//            std_adj = std > (1 / sqrt_num) ? std : (1 / sqrt_num);
+//
+//            for (int i = 0; i < img_size; i++) {
+//                for (int j = 0; j < img_size; j++) {
+//                    for (int k = 0; k < 3; k++) {
+//                        prewhite[i][j][k] = (data[i][j][k] - mean) / std_adj;
+//                    }
+//                }
+//            }
+//
+//            return prewhite;
+//
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//        return null;
+//    }
+//
+
+
+    /**
+     * read a image form floder and embedding
+     */
+//    public static float[] executeInceptionGraph1(String path1) {
+//        BATCH_SIZE = 1;
+//        float[][][][] prewhite = new float[BATCH_SIZE][img_size][img_size][CHANNELS];
+//        prewhite[0] = getData(path1);
+//
+//        float[] temp = new float[BATCH_SIZE * img_size * img_size * CHANNELS];
+//
+//        for (int i = 0; i < img_size; i++) {
+//            for (int j = 0; j < img_size; j++) {
+//                for (int k = 0; k < CHANNELS; k++) {
+//                    int index = i * img_size * CHANNELS + j * CHANNELS + k;
+//                    temp[index] = prewhite[0][i][j][k];
+//                }
+//            }
+//        }
+//
+//        long[] shape = new long[]{BATCH_SIZE, img_size, img_size, CHANNELS};
+//        Tensor<Float> imageTensor = Tensor.create(shape, FloatBuffer.wrap(temp));
+//
+//        Tensor<Boolean> phase_train = Tensor.create(false, Boolean.class);
+//
+//
+//        // Generally, there may be multiple output tensors, all of them must be closed to prevent resource leaks.
+//        Tensor<Float> result =
+//                s.runner().feed("input:0", imageTensor).feed("phase_train:0", phase_train).
+//                        fetch("embeddings:0").run().get(0).expect(Float.class);
+//
+//        float[][] output = result.copyTo(new float[BATCH_SIZE][emb_size]);
+//        return output[0];
+//    }
+
+
+//    public static double executeInceptionGraph(String path1, String path2) {
+//        BATCH_SIZE = 2;
+//
+//        float[][][][] prewhite = new float[BATCH_SIZE][img_size][img_size][CHANNELS];
+//
+//        long time = System.currentTimeMillis();
+//        prewhite[0] = getData(path1);
+//        prewhite[1] = getData(path2);
+//
+//
+//        float[] temp = new float[BATCH_SIZE * img_size * img_size * CHANNELS];
+//        for (int b = 0; b < BATCH_SIZE; b++) {
+//            for (int i = 0; i < img_size; i++) {
+//                for (int j = 0; j < img_size; j++) {
+//                    for (int k = 0; k < CHANNELS; k++) {
+//                        int index = b * img_size * img_size * CHANNELS + i * img_size * CHANNELS + j * CHANNELS + k;
+//                        temp[index] = prewhite[b][i][j][k];
+//                    }
+//                }
+//            }
+//        }
+//
+//
+//        long[] shape = new long[]{BATCH_SIZE, img_size, img_size, CHANNELS};
+//        Tensor<Float> imageTensor = Tensor.create(shape, FloatBuffer.wrap(temp));
+//
+//        long time1 = System.currentTimeMillis();
+//        float seconds_pic = (time1 - time) / 1000F;
+//        System.out.println("creat tensor:" + Float.toString(seconds_pic) + " seconds.");
+//
+//
+//        Tensor<Boolean> phase_train = Tensor.create(false, Boolean.class);
+//
+//
+//        // Generally, there may be multiple output tensors, all of them must be closed to prevent resource leaks.
+//        Tensor<Float> result =
+//                s.runner().feed("input:0", imageTensor).feed("phase_train:0", phase_train).
+//                        fetch("embeddings:0").run().get(0).expect(Float.class);
+//
+//
+//        float[][] output = result.copyTo(new float[BATCH_SIZE][emb_size]);
+//
+//        double distance = 0;
+//        for (int m = 0; m < emb_size; m++) {
+//            distance += (output[0][m] - output[1][m]) * (output[0][m] - output[1][m]);
+//        }
+//
+//        distance = Math.sqrt(distance);
+//
+//
+//        long time2 = System.currentTimeMillis();
+//        float seconds_session = (time2 - time1) / 1000F;
+//        System.out.println("embedding:" + Float.toString(seconds_session) + " seconds.");
+//
+//        return distance;
+//
+//    }
 
 
 //    public static void main(String[] args) throws Exception {

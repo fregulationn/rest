@@ -20,6 +20,7 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.example.data.domain.Face;
 import com.example.face_library.FaceNet;
 import org.apache.commons.io.FileUtils;
 
@@ -50,7 +51,6 @@ public class FileUploadEndpoint {
     @Autowired
     private FaceService feature_service;
 
-
     @POST
     @Path("multi-identify-batch")
     @Produces(MediaType.APPLICATION_JSON)
@@ -70,51 +70,71 @@ public class FileUploadEndpoint {
         }
 
         List<List<Object>> detect_res_all = new ArrayList<>();
+
+        /** this value give a min between num of faces in per image and detect_top_num*/
+        int[] detect_top = new int[imgStr.length];
         for (int i = 0; i < imgStr.length; i++) {
             byte[] imgData = Base64Utils.decodeFromString(imgStr[i]);
-            detect_res_all.add(Rcnn.executeGraph(imgData));
+            List<Object> tmp_detect_result = Rcnn.executeGraph(imgData);
+
+            float[] detect_face_num = (float[]) tmp_detect_result.get(3);
+            detect_top[i] = (int) Math.floor((double) detect_face_num[0]);
+            detect_top[i] = detect_top[i] < detect_top_num ? detect_top[i] : detect_top_num;
+
+            System.out.println(detect_top[i]);
+
+            detect_res_all.add(tmp_detect_result);
+
         }
 
-        float[][] face_feature = MultiIdentify.handleResult(detect_res_all, detect_top_num);
+        float[][] face_feature = MultiIdentify.handleResult(detect_res_all, detect_top);
+
+        List<Face> all_face = new ArrayList<>();
+        for (String zuId : group_id) {
+            all_face.addAll(feature_service.findByZuId(zuId));
+        }
+
+        List<Face> res_face = MultiIdentify.multi_Identify(all_face, face_feature, user_top_num);
+        System.out.println(res_face.size());
+
 
         Map<String, Object> res = new HashMap<>();
         res.put("log_id", 73473737);
-        res.put("image_num", 1);
+        res.put("Image_num", imgStr.length);
+
+        Map<String, Object> res_all = new HashMap<>();
+        res_all.put("result_num", res_face.size());
 
         List<Object> result = new ArrayList<>();
+        int index = 0;
+        int index1 = 0;
+        for (int w = 0; w < imgStr.length; w++) {
+            float[][] box = (float[][]) detect_res_all.get(w).get(0);
+            float[][] prob = (float[][]) detect_res_all.get(w).get(1);
+            for (int i = 0; i < detect_top[w]; i++) {
+                for (int j = 0; j < user_top_num; j++) {
+                    Map<String, Object> res1 = new HashMap<>();
+                    res1.put("group_id", res_face.get(index).getUser().getZus().get(0).getZuId());
+                    res1.put("uid", res_face.get(index).getUser().getuId());
+                    res1.put("user_info", res_face.get(index).getUser().getUserInfo());
 
-        Map<String, Object> res1 = new HashMap<>();
-        res1.put("group_id", "test1");
-        res1.put("uid", "u333333");
-        res1.put("user_info", "Test User");
-        Map<String, Object> position = new HashMap<>();
-        position.put("left", 726.99188232422);
-        position.put("top", 288.37701416016);
-        position.put("height", 42);
-        position.put("width", 44);
-        position.put("degree", -4);
-        position.put("prob", 0.91117089986801);
-        res1.put("position", position);
-        res1.put("scores", 99.3);
+                    Map<String, Object> position = new HashMap<>();
+                    position.put("top", box[i][0]);
+                    position.put("left", box[i][1]);
+                    position.put("height", box[i][2]);
+                    position.put("width", box[i][3]);
+                    position.put("prob", prob[0][i]);
+                    res1.put("position", position);
+                    res1.put("scores", MultiIdentify.get_score(face_feature[index1], res_face.get(index)));
+                    result.add(res1);
+                    ++index;
+                }
+                ++index1;
+            }
+        }
 
-        result.add(res1);
-
-        Map<String, Object> rest2 = new HashMap<>();
-        rest2.put("group_id", "test1");
-        rest2.put("uid", "u2222222");
-        rest2.put("user_info", "Test User");
-        Map<String, Object> position2 = new HashMap<>();
-        position2.put("left", 726.99188232422);
-        position2.put("top", 288.37701416016);
-        position2.put("height", 42);
-        position2.put("width", 44);
-        position2.put("degree", -4);
-        position2.put("prob", 0.91117089986801);
-        rest2.put("position", position2);
-        rest2.put("scores", 82.3);
-
-        result.add(rest2);
-        res.put("result_all", result);
+        res_all.put("result", result);
+        res.put("Result_all", res_all);
 
         return res;
 
@@ -136,6 +156,8 @@ public class FileUploadEndpoint {
         List<Object> detect_result = Rcnn.executeGraph(imgData);
         float[][] box = (float[][]) detect_result.get(0);
         float[][] prob = (float[][]) detect_result.get(1);
+        float[] detect_face_num = (float[]) detect_result.get(3);
+        max_face_num = (int) (detect_face_num[0] < max_face_num ? detect_face_num[0] : max_face_num);
 
         Map<String, Object> res = new HashMap<>();
         res.put("log_id", 73473737);

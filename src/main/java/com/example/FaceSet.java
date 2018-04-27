@@ -4,6 +4,7 @@ package com.example;
 import com.example.data.device.FaceService;
 import com.example.data.domain.Face;
 import com.example.face_library.FaceNet;
+import com.example.face_library.Rcnn;
 import org.apache.log4j.Logger;
 import org.apache.tomcat.util.http.fileupload.ByteArrayOutputStream;
 
@@ -41,34 +42,13 @@ public class FaceSet {
         return result;
     }
 
-    @POST
-    @Path("f")
-    public File postFile(final File f) throws IOException {
-        try (BufferedReader br = new BufferedReader(new FileReader(f))) {
-            String s;
-            do {
-                s = br.readLine();
-                LOGGER.debug("f_read");
-                LOGGER.debug(s);
-            } while (s != null);
-
-            LOGGER.debug("f_end");
-            BufferedOutputStream out = new BufferedOutputStream(
-                    new FileOutputStream(new File("./save.txt")));
-            out.write(f.toString().getBytes());
-            out.flush();
-            out.close();
-
-            return f;
-        }
-    }
-
 
     @POST
     @Path("add")
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, String> compare(@Context HttpServletRequest request) {
-        Map<String, String> result = new HashMap<String, String>();
+        Map<String, String> result = new HashMap<>();
+
 
         String imgStr2 = request.getParameter("images");
         byte[] imgData2 = Base64Utils.decodeFromString(imgStr2);
@@ -99,10 +79,19 @@ public class FaceSet {
             e.printStackTrace();
         }
 
-        org.apache.tomcat.util.http.fileupload.ByteArrayOutputStream bout = new ByteArrayOutputStream();
+        ByteArrayOutputStream bout = new ByteArrayOutputStream();
         try {
 
-            float[] feature = FaceNet.executeInceptionGraph1(file.getAbsolutePath());
+            /** only one image,but in order to use function ,do redundant step*/
+            List<List<Object>> detect_res_all = new ArrayList<>();
+            List<Object> tmp_detect_result = Rcnn.executeGraph(imgData2);
+            detect_res_all.add(tmp_detect_result);
+            int[] detect_top = new int[1];
+            detect_top[0] = 1;
+            float[][] face_feature = MultiIdentify.handleResult(detect_res_all, detect_top);
+            float[] feature = face_feature[0];
+
+//            float[] feature = FaceNet.executeInceptionGraph1(file.getAbsolutePath());
             DataOutputStream dout = new DataOutputStream(bout);
             for (float d : feature) {
                 dout.writeFloat(d);
@@ -117,7 +106,7 @@ public class FaceSet {
         Face face = new Face(feature, file.getAbsolutePath());
 
         String uid = request.getParameter("uid");
-        String group_id = request.getParameter("group_id");
+        String[] group_id = request.getParameter("group_id").split(",");
         String user_info = request.getParameter("user_info");
 
 //        feature_service.saveFace(face, uid, group_id, user_info);
@@ -133,7 +122,6 @@ public class FaceSet {
             result.put("error_msg", "image exist");
         }
 
-
         return result;
 
 
@@ -146,6 +134,28 @@ public class FaceSet {
 //            }
     }
 
+
+//    @POST
+//    @Path("f")
+//    public File postFile(final File f) throws IOException {
+//        try (BufferedReader br = new BufferedReader(new FileReader(f))) {
+//            String s;
+//            do {
+//                s = br.readLine();
+//                LOGGER.debug("f_read");
+//                LOGGER.debug(s);
+//            } while (s != null);
+//
+//            LOGGER.debug("f_end");
+//            BufferedOutputStream out = new BufferedOutputStream(
+//                    new FileOutputStream(new File("./save.txt")));
+//            out.write(f.toString().getBytes());
+//            out.flush();
+//            out.close();
+//
+//            return f;
+//        }
+//    }
 
 }
 
