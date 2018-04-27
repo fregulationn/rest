@@ -336,7 +336,6 @@ public class MultiIdentify {
 //        float seconds = (endTime - startTime) / 1000F;
 //        System.out.println("load model:" + Float.toString(seconds) + " seconds.");
 //    }
-
 }
 
 
