@@ -108,7 +108,7 @@ public class MultiIdentify {
     }
 
     /**
-     * transform mat to float array and prewhite the array.
+     * transform mat to float array and pre-whiten the array.
      */
     private static float[][][] prewhite(Mat imageAligned) {
 
@@ -149,6 +149,10 @@ public class MultiIdentify {
         return res;
     }
 
+
+    /**
+     * Convert the 3-dimensional array to one dimension
+     */
     private static byte[] convert(byte[][][] img) {
 
         byte[] temp = new byte[img.length * img[0].length * 3];
@@ -164,6 +168,9 @@ public class MultiIdentify {
     }
 
 
+    /**
+     * Calculate the scores of feature arrays(float) and face's feature.
+     */
     public static float get_score(float[] face_feature, Face f) {
         float res = 0;
 
@@ -183,12 +190,16 @@ public class MultiIdentify {
         for (int i = 0; i < face_feature.length; i++) {
             res += feature[i] * face_feature[i];
         }
-        res = (float) Math.sin((double) res);
+//        res = (float) Math.sin((double) res);
 
         return res;
     }
 
 
+    /**
+     * Comparing the face list with the individual feature, the face is sorted according to the score(above)
+     * return the number of faces limited .
+     */
     public static List<Face> multi_Identify(List<Face> all_face,float[]face_feature, int user_top_num) {
         List<Face> res = new ArrayList<>();
 
@@ -216,6 +227,11 @@ public class MultiIdentify {
         return res;
     }
 
+
+    /**
+     * Comparing the face list with the multiple feature, the face is sorted according to the score
+     * return the number of faces limited .
+     */
     public static List<Face> multi_Identify(List<Face> all_face,float[][] face_feature, int user_top_num) {
         List<Face> res = new ArrayList<>();
         for (int i = 0; i < face_feature.length; i++) {

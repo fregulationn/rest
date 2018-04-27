@@ -16,6 +16,6 @@ public class JerseyConfig extends ResourceConfig {
 		register(FaceSet.class);
 		register(CorsFilter.class);
 		register(MultiPartFeature.class);
-		register(FileUploadEndpoint.class);
+		register(FaceDetectIdentify.class);
 	}
 }

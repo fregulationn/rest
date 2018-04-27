@@ -56,6 +56,7 @@ public class FaceService {
         FaceRepository.save(face);
     }
 
+
     public void saveFace(Face face, String uid, String[] group_id, String user_info) {
 
         User user;
@@ -72,6 +73,8 @@ public class FaceService {
 
         for (String single_group_id : group_id) {
             Zu zu = null;
+
+//            Determine if the user has a relationship with the group.
             for (Zu a : user.getZus()) {
                 System.out.println(a.getZuId());
                 if (a.getZuId().equals(single_group_id)) {

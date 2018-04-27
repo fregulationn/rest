@@ -46,7 +46,7 @@ import com.example.face_library.Rcnn;
 
 @Component
 @Path("/face/v2")
-public class FileUploadEndpoint {
+public class FaceDetectIdentify {
 
     @Autowired
     private FaceService feature_service;
