@@ -83,13 +83,19 @@ public class FaceSet {
         try {
 
             /** only one image,but in order to use function ,do redundant step*/
-            byte[][] imgDatas = new byte[0][];
+            byte[][] imgDatas = new byte[1][];
             imgDatas[0] = imgData2;
             List<Object> detect_res = Rcnn.executeGraph(imgDatas);
             int[] detect_top = new int[1];
             detect_top[0] = 1;
             float[][] face_feature = MultiIdentify.handleResult(detect_res, detect_top,1);
             float[] feature = face_feature[0];
+//
+//            for (float a:feature
+//                 ) {
+//                System.out.println(a);
+//            }
+
 
 //            float[] feature = FaceNet.executeInceptionGraph1(file.getAbsolutePath());
             DataOutputStream dout = new DataOutputStream(bout);
