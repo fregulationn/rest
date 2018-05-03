@@ -101,9 +101,10 @@ public class FaceService {
             face.setUser(user);
             ZuRepository.saveAndFlush(zu);
             UserRepository.saveAndFlush(user);
+            FaceRepository.saveAndFlush(face);
         }
 
-        FaceRepository.saveAndFlush(face);
+
     }
 
 
