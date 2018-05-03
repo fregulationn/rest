@@ -49,9 +49,9 @@ public class MultiIdentify {
     /**
      * handle the result of detection ,then aligned,then embedding ,return the feature which have already been Pre-whiten
      **/
-    public static float[][] handleResult(List<List<Object>> res_all, int[] detect_top) {
+    public static float[][] handleResult(List<Object> res_all, int[] detect_top,int img_num) {
         int batch_size = 0;
-        for (int i = 0; i < res_all.size(); i++) {
+        for (int i = 0; i < img_num; i++) {
             batch_size += detect_top[i];
         }
         System.out.println(batch_size);
@@ -59,9 +59,13 @@ public class MultiIdentify {
         float[][][][] prewhite = new float[batch_size][img_size][img_size][CHANNELS];
 
         int index = 0;
-        for (int i = 0; i < res_all.size(); i++) {
-            float[][] box = (float[][]) res_all.get(i).get(0);
-            byte[][][] image = (byte[][][]) res_all.get(i).get(4);
+
+        float[][][] box_all = (float[][][]) res_all.get(0);
+        byte[][][][] image_all = (byte[][][][]) res_all.get(4);
+
+        for (int i = 0; i < img_num; i++) {
+            float[][] box = box_all[i];
+            byte[][][] image = image_all[i];
             for (int j = 0; j < detect_top[i]; j++) {
                 int top = (int) Math.floor((double) box[j][0]);
                 int left = (int) Math.floor((double) box[j][1]);
