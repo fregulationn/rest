@@ -8,7 +8,6 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 
 
-import javax.management.relation.RelationNotFoundException;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
@@ -70,26 +69,25 @@ public class FaceDetectIdentify {
             user_top_num = Integer.parseInt(request.getParameter("user_top_num"));
         }
 
-
+        List<List<Object>> detect_res_all = new ArrayList<>();
 
         /** this value give a min between num of faces in per image and detect_top_num*/
         int[] detect_top = new int[imgStr.length];
-
-        /** in order to use batch*/
-        byte [][] imgDatas = new byte[imgStr.length][];
         for (int i = 0; i < imgStr.length; i++) {
-            imgDatas[i] = Base64Utils.decodeFromString(imgStr[i]);
-        }
-        List<Object> detect_res_all = Rcnn.executeGraph(imgDatas);
-        float[] detect_face_num = (float[]) detect_res_all.get(3);
+            byte[] imgData = Base64Utils.decodeFromString(imgStr[i]);
+            List<Object> tmp_detect_result = Rcnn.executeGraph(imgData);
 
-        for (int i = 0; i < imgStr.length; i++) {
-            detect_top[i] = (int) Math.floor((double) detect_face_num[i]);
+            float[] detect_face_num = (float[]) tmp_detect_result.get(3);
+            detect_top[i] = (int) Math.floor((double) detect_face_num[0]);
             detect_top[i] = detect_top[i] < detect_top_num ? detect_top[i] : detect_top_num;
-            System.out.println(detect_top[i]);
-        }
-        float[][] face_feature = MultiIdentify.handleResult(detect_res_all, detect_top,imgStr.length);
 
+            System.out.println(detect_top[i]);
+
+            detect_res_all.add(tmp_detect_result);
+
+        }
+
+        float[][] face_feature = MultiIdentify.handleResult(detect_res_all, detect_top);
 
         List<Face> all_face = new ArrayList<>();
         for (String zuId : group_id) {
@@ -110,13 +108,9 @@ public class FaceDetectIdentify {
         List<Object> result = new ArrayList<>();
         int index = 0;
         int index1 = 0;
-
-        float[][][] box_all = (float[][][]) detect_res_all.get(0);
-        float[][] prob = (float[][]) detect_res_all.get(1);
-
         for (int w = 0; w < imgStr.length; w++) {
-            float[][] box =box_all[w] ;
-
+            float[][] box = (float[][]) detect_res_all.get(w).get(0);
+            float[][] prob = (float[][]) detect_res_all.get(w).get(1);
             for (int i = 0; i < detect_top[w]; i++) {
                 for (int j = 0; j < user_top_num; j++) {
                     Map<String, Object> res1 = new HashMap<>();
@@ -129,8 +123,7 @@ public class FaceDetectIdentify {
                     position.put("left", box[i][1]);
                     position.put("height", box[i][2]);
                     position.put("width", box[i][3]);
-
-                    position.put("prob", prob[w][i]);
+                    position.put("prob", prob[0][i]);
                     res1.put("position", position);
                     res1.put("scores", MultiIdentify.get_score(face_feature[index1], res_face.get(index)));
                     result.add(res1);
@@ -153,20 +146,15 @@ public class FaceDetectIdentify {
     public Map detect(@Context HttpServletRequest request) {
         Map<String, String[]> request_value = request.getParameterMap();
 
-        String[] imgStr = request_value.get("image")[0].split(",");
-
-        byte[][] imgData = new byte[imgStr.length][];
-        imgData[0] = Base64Utils.decodeFromString(imgStr[0]);
+        String imgStr = request_value.get("image")[0];
+        byte[] imgData = Base64Utils.decodeFromString(imgStr);
         int max_face_num = 1;
         if (request_value.containsKey("max_face_num")) {
             max_face_num = Integer.parseInt(request.getParameter("max_face_num"));
         }
 
         List<Object> detect_result = Rcnn.executeGraph(imgData);
-
-        float[][][] box_all = (float[][][]) detect_result.get(0);
-        float[][] box =box_all[0];
-
+        float[][] box = (float[][]) detect_result.get(0);
         float[][] prob = (float[][]) detect_result.get(1);
         float[] detect_face_num = (float[]) detect_result.get(3);
         max_face_num = (int) (detect_face_num[0] < max_face_num ? detect_face_num[0] : max_face_num);
