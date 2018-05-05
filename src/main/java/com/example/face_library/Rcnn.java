@@ -17,13 +17,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Rcnn {
-    private static int BATCH_SIZE;
+
     private final static int CHANNELS = 3;
     private static Graph g;
     private static Session s;
-    private static byte[][][][] images;
-    private static int height;
-    private static int width;
+
 
     public Rcnn() {
         long startTime = System.currentTimeMillis();
@@ -40,33 +38,26 @@ public class Rcnn {
     }
 
 
-    private static Tensor<UInt8> makeImageTensor(byte[][] imgs) {
+    private static byte[][][][] readImage(byte[][] imgs) {
         try {
-            ByteArrayInputStream timp_in = new ByteArrayInputStream(imgs[0]);    //将b作为输入流；
-            BufferedImage temp_bimg = ImageIO.read(timp_in);
-            height = temp_bimg.getHeight();
-            width = temp_bimg.getWidth();
-            temp_bimg.flush();
+            byte[][][][] images = new byte[imgs.length][][][];
 
-
-            BATCH_SIZE = imgs.length;
-            images = new byte[imgs.length][height][width][3];
-            byte[] temp = new byte[BATCH_SIZE * height * width * CHANNELS];
+//            System.out.println("batch local 2");
+//            System.out.println(imgs.length);
 
             for (int w = 0; w < imgs.length; w++) {
                 ByteArrayInputStream in = new ByteArrayInputStream(imgs[w]);    //将b作为输入流；
                 BufferedImage bimg = ImageIO.read(in);
+
+                int height = bimg.getHeight();
+                int width = bimg.getWidth();
+                images[w] = new byte[height][width][CHANNELS];
 
                 //通过getRGB()方式获得像素矩阵
                 //此方式为沿Height方向扫描,也就是横向所以i为width
                 for (int i = 0; i < height; i++) {
                     for (int j = 0; j < width; j++) {
                         int rgb = bimg.getRGB(j, i);
-                        int index = w * width * height * CHANNELS + i * width * CHANNELS + j * CHANNELS;
-                        temp[index] = (byte) ((rgb & 0xff0000) >> 16);
-                        temp[index + 1] = (byte) ((rgb & 0xff00) >> 8);
-                        temp[index + 2] = (byte) ((rgb & 0xff));
-
                         images[w][i][j][0] = (byte) ((rgb & 0xff0000) >> 16);
                         images[w][i][j][1] = (byte) ((rgb & 0xff00) >> 8);
                         images[w][i][j][2] = (byte) ((rgb & 0xff));
@@ -74,21 +65,44 @@ public class Rcnn {
                 }
                 bimg.flush();
             }
+            return images;
 
-            long[] shape = new long[]{BATCH_SIZE, height, width, CHANNELS};
-            return Tensor.create(UInt8.class, shape, ByteBuffer.wrap(temp));
         } catch (IOException e) {
             e.printStackTrace();
         }
         return null;
     }
 
+
+    private static Tensor<UInt8> makeImageTensor(byte[][][][] imgs) {
+        int BATCH_SIZE = imgs.length;
+        int height = imgs[0].length;
+        int width = imgs[0][0].length;
+
+        byte[] temp = new byte[BATCH_SIZE * height * width * CHANNELS];
+
+        for (int w = 0; w < imgs.length; w++) {
+            for (int i = 0; i < height; i++) {
+                for (int j = 0; j < width; j++) {
+                    int index = w * width * height * CHANNELS + i * width * CHANNELS + j * CHANNELS;
+                    temp[index] = imgs[w][i][j][0];
+                    temp[index + 1] = imgs[w][i][j][1];
+                    temp[index + 2] = imgs[w][i][j][2];
+                }
+            }
+
+        }
+
+        long[] shape = new long[]{BATCH_SIZE, height, width, CHANNELS};
+        return Tensor.create(UInt8.class, shape, ByteBuffer.wrap(temp));
+
+    }
+
     public static List<Object> executeGraph(byte[][] imgs) {
-
-
-
         long time = System.currentTimeMillis();
-        Tensor<UInt8> imageTensor = makeImageTensor(imgs);
+
+        byte[][][][] images = readImage(imgs);
+        Tensor<UInt8> imageTensor = makeImageTensor(images);
 
         List<Tensor<?>> outputs = null;
 
@@ -113,7 +127,7 @@ public class Rcnn {
 
         long[] tmp_shape = outputs.get(0).shape();
         float[][][] box = outputs.get(0).copyTo(new float[(int) tmp_shape[0]][(int) tmp_shape[1]][(int) tmp_shape[2]]);
-        float[][][] real_box = box_trans(box);
+        float[][][] real_box = box_trans(box, images[0].length, images[0][0].length);
         res.add(real_box);
         tmp_shape = outputs.get(1).shape();
         float[][] scores = outputs.get(1).copyTo(new float[(int) tmp_shape[0]][(int) tmp_shape[1]]);
@@ -153,15 +167,15 @@ public class Rcnn {
      * 2:height
      * 3:width
      **/
-    private static float[][][] box_trans(float[][][] box) {
+    private static float[][][] box_trans(float[][][] box, int height, int width) {
 
         float[][][] res = new float[box.length][box[0].length][box[0][0].length];
 
         for (int w = 0; w < box.length; w++) {
             for (int i = 0; i < box[0].length; i++) {
-                res[w][i][0] = height* box[w][i][0];
+                res[w][i][0] = height * box[w][i][0];
                 res[w][i][1] = width * box[w][i][1];
-                res[w][i][2] = height* box[w][i][2] - height* box[w][i][0];
+                res[w][i][2] = height * box[w][i][2] - height * box[w][i][0];
                 res[w][i][3] = width * box[w][i][3] - width * box[w][i][1];
             }
         }
