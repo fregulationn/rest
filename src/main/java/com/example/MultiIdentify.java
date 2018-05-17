@@ -93,9 +93,13 @@ public class MultiIdentify {
                 FaceAffineTransform faceAffineTransform = new FaceAffineTransform(img_size);
                 Mat imageAligned = faceAffineTransform.processImage(img_mat, points);
 
-                String filename = "img/faceAffineTransform" + Integer.toString(i * 2 + j) + ".png";
-                System.out.println(String.format("Writing %s", filename));
-                Imgcodecs.imwrite(filename, imageAligned);
+//                String filename1 = "img/face" + Integer.toString(i * 2 + j) + ".png";
+//                System.out.println(String.format("Writing %s", filename1));
+//                Imgcodecs.imwrite(filename1, img_mat);
+//
+//                String filename = "img/faceAffineTransform" + Integer.toString(i * 2 + j) + ".png";
+//                System.out.println(String.format("Writing %s", filename));
+//                Imgcodecs.imwrite(filename, imageAligned);
 
                 prewhite[index] = prewhite(imageAligned);
                 ++ index;

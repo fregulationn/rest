@@ -54,6 +54,8 @@ public class FaceNet {
      * embedding from 4-dimensions array which have already been Pre-whiten
      */
     public static float[][] executeInceptionGraphPrewhite(float[][][][] prewhite) {
+        long startTime = System.currentTimeMillis();
+
         int batch_size = prewhite.length;
 
         float[] temp = ArrayUtil.flattenFloatArray(prewhite);
@@ -74,6 +76,11 @@ public class FaceNet {
         Tensor<Float> result =
                 s.runner().feed("input:0", imageTensor).feed("phase_train:0", phase_train).
                         fetch("embeddings:0").run().get(0).expect(Float.class);
+
+        long endTime = System.currentTimeMillis();
+        float seconds = (endTime - startTime) / 1000F;
+        System.out.println("load model:" + Float.toString(seconds) + " seconds.");
+
 
         float[][] output = result.copyTo(new float[batch_size][emb_size]);
         return output;

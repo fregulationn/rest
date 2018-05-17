@@ -25,7 +25,7 @@ public class Rcnn {
 
     public Rcnn() {
         long startTime = System.currentTimeMillis();
-        String modelfile = System.getProperty("user.dir") + "/model/" + "frozen_inference_graph_mobilenet_300.pb";
+        String modelfile = System.getProperty("user.dir") + "/model/" + "frozen_inference_graph_face.pb";
         System.out.println(modelfile);
         byte[] graphDef = readAllBytesOrExit(Paths.get(modelfile));
         g = new Graph();
@@ -81,6 +81,10 @@ public class Rcnn {
 
         byte[] temp = new byte[BATCH_SIZE * height * width * CHANNELS];
 
+//        long time = System.currentTimeMillis();
+//
+//
+
         for (int w = 0; w < imgs.length; w++) {
             for (int i = 0; i < height; i++) {
                 for (int j = 0; j < width; j++) {
@@ -93,6 +97,10 @@ public class Rcnn {
 
         }
 
+//        long time11 = System.currentTimeMillis();
+//        float seconds_pic1 = (time11 - time) / 1000F;
+//        System.out.println("for loop:" + Float.toString(seconds_pic1) + " seconds.");
+
         long[] shape = new long[]{BATCH_SIZE, height, width, CHANNELS};
         return Tensor.create(UInt8.class, shape, ByteBuffer.wrap(temp));
 
@@ -102,9 +110,18 @@ public class Rcnn {
         long time = System.currentTimeMillis();
 
         byte[][][][] images = readImage(imgs);
+
+        long time11 = System.currentTimeMillis();
+        float seconds_pic1 = (time11 - time) / 1000F;
+        System.out.println("read images:" + Float.toString(seconds_pic1) + " seconds.");
+
         Tensor<UInt8> imageTensor = makeImageTensor(images);
 
         List<Tensor<?>> outputs = null;
+
+        long time1 = System.currentTimeMillis();
+        float seconds_pic = (time1 - time11) / 1000F;
+        System.out.println("make tesor:" + Float.toString(seconds_pic) + " seconds.");
 
         try {
             outputs = s.runner()
@@ -118,9 +135,9 @@ public class Rcnn {
             throw new RuntimeException(e.getMessage(), e);
         }
 
-        long time1 = System.currentTimeMillis();
-        float seconds_pic = (time1 - time) / 1000F;
-        System.out.println("creat tensor:" + Float.toString(seconds_pic) + " seconds.");
+        long time2 = System.currentTimeMillis();
+        float third = (time2 - time1) / 1000F;
+        System.out.println("creat tensor:" + Float.toString(third) + " seconds.");
 
 
         List<Object> res = new ArrayList<>();
