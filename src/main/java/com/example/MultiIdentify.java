@@ -195,9 +195,16 @@ public class MultiIdentify {
         }
 
 //        System.out.println(face_feature.length);
+
+//        for (int i = 0; i < face_feature.length; i++) {
+//            res += feature[i] * face_feature[i];
+//        }
         for (int i = 0; i < face_feature.length; i++) {
-            res += feature[i] * face_feature[i];
+            res += (feature[i] -face_feature[i])* (feature[i] -face_feature[i]);
         }
+        System.out.println(res);
+        System.out.println(f.getId());
+
 //        res = (float) Math.sin((double) res);
 
         return res;

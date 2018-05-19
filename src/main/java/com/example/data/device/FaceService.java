@@ -96,7 +96,13 @@ public class FaceService {
                 zu.getUsers().add(user);
                 System.out.println("out of contains");
             }else
+            {
+                face.setUser(user);
+                FaceRepository.saveAndFlush(face);
                 continue;
+
+            }
+
 
             face.setUser(user);
             ZuRepository.saveAndFlush(zu);
