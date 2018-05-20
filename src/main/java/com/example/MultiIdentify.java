@@ -202,8 +202,8 @@ public class MultiIdentify {
         for (int i = 0; i < face_feature.length; i++) {
             res += (feature[i] -face_feature[i])* (feature[i] -face_feature[i]);
         }
-        System.out.println(res);
-        System.out.println(f.getId());
+//        System.out.println(res);
+//        System.out.println(f.getId());
 
 //        res = (float) Math.sin((double) res);
 
@@ -225,9 +225,9 @@ public class MultiIdentify {
                 float score2 = get_score(face_feature,f2);
 
                 if (score1 < score2) {
-                    return 1;
-                } else if (score1 > score2) {
                     return -1;
+                } else if (score1 > score2) {
+                    return 1;
                 } else {
                     return 0;
                 }
