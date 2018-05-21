@@ -38,6 +38,7 @@ public class Rcnn {
     }
 
 
+    /** Extracting picture in the form of arrays */
     private static byte[][][][] readImage(byte[][] imgs) {
         try {
             byte[][][][] images = new byte[imgs.length][][][];
@@ -73,7 +74,7 @@ public class Rcnn {
         return null;
     }
 
-
+    /** Convert the array to tensor */
     private static Tensor<UInt8> makeImageTensor(byte[][][][] imgs) {
         int BATCH_SIZE = imgs.length;
         int height = imgs[0].length;
@@ -106,6 +107,7 @@ public class Rcnn {
 
     }
 
+    /** detect face using a pre-trained model */
     public static List<Object> executeGraph(byte[][] imgs) {
         long time = System.currentTimeMillis();
 

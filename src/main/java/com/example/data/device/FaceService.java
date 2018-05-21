@@ -57,6 +57,10 @@ public class FaceService {
     }
 
 
+
+    /**
+     * resgiter a face,and build relationships between face,group,uesr
+     */
     public void saveFace(Face face, String uid, String[] group_id, String user_info) {
 
         User user;
