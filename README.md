@@ -117,6 +117,7 @@ BUG：`org.springframework.dao.DataIntegrityViolationException","message":"could
 上面的错误报了两次：（但是在调试的时候真正的错误并不是上面的原因，而是打印的信息会报数据库有关的错误） 
 1. 本来打算使用字符串保存特征结果，但是各种方法都没有用，总是存不进去，因为有一万字节的长度，于是更改为blob格式，[blob格式长度](https://stackoverflow.com/questions/21522875/data-truncation-data-too-long-for-column-logo-at-row-1) 
 2. 更改后直接插入，但是表是没有更新的，所以有问题，于是删除表后重新插入成功 
+
 BUG：调用`UserRepository`总是报为空的错，[@Autowired是一种函数，可以对成员变量、方法和构造函数进行标注，来完成自动装配的工作](https://www.zhihu.com/question/39356740)  
 BUG：数据库连接和调整是在一开始就做了的，如果有问题会在一开始的一长串东西中报错，[Mysql中有些关键字不能用](https://dba.stackexchange.com/questions/123305/mysqlsyntaxerrorexception-you-have-an-error-in-your-sql-syntax)，[Group也包括在里面](http://zhaozhi-1983.iteye.com/blog/159044)，我改名为zu 
 BUG：[Solve “failed to lazily initialize a collection of role” exception](https://stackoverflow.com/questions/11746499/solve-failed-to-lazily-initialize-a-collection-of-role-exception) 
