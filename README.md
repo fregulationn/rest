@@ -119,14 +119,14 @@ BUG：`org.springframework.dao.DataIntegrityViolationException","message":"could
 2. 更改后直接插入，但是表是没有更新的，所以有问题，于是删除表后重新插入成功 
 
 BUG：调用`UserRepository`总是报为空的错，[@Autowired是一种函数，可以对成员变量、方法和构造函数进行标注，来完成自动装配的工作](https://www.zhihu.com/question/39356740)  
-BUG：数据库连接和调整是在一开始就做了的，如果有问题会在一开始的一长串东西中报错，[Mysql中有些关键字不能用](https://dba.stackexchange.com/questions/123305/mysqlsyntaxerrorexception-you-have-an-error-in-your-sql-syntax)，[Group也包括在里面](http://zhaozhi-1983.iteye.com/blog/159044)，我改名为zu 
-BUG：[Solve “failed to lazily initialize a collection of role” exception](https://stackoverflow.com/questions/11746499/solve-failed-to-lazily-initialize-a-collection-of-role-exception) 
-BUG：[多对多的关系需要在两边都add才会将关系存储到数据库中](https://www.callicoder.com/hibernate-spring-boot-jpa-many-to-many-mapping-example/) 
-BUG：多对多关系，如果已经存在，再重复插入到数据库的话会报错，[解决方法](https://stackoverflow.com/questions/41899628/jpa-hibernate-multiple-representations-of-the-same-entity)，查找关系，然后通过对比组的名字来判断关系是否已经被添加过，直接使用contains函数来判断，因为hashcode不同，程序不会认为即使两个信息一样的组事实上是一个组 
-BUG：[detached entity passed to persist](https://stackoverflow.com/questions/13370221/jpa-hibernate-detached-entity-passed-to-persist) 
-BUG：[object references an unsaved transient instance](http://aniyo.iteye.com/blog/2388671)，这个错误产生的原因是，级联保存的时候，Zu对象可能并没有在数据库中，这个时候保存User，系统不知道如何处理，解决办法：如果是new的Zu提前保存一下 
+BUG：数据库连接和调整是在一开始就做了的，如果有问题会在一开始的一长串东西中报错，[Mysql中有些关键字不能用](https://dba.stackexchange.com/questions/123305/mysqlsyntaxerrorexception-you-have-an-error-in-your-sql-syntax)，[Group也包括在里面](http://zhaozhi-1983.iteye.com/blog/159044)，我改名为zu   
+BUG：[Solve “failed to lazily initialize a collection of role” exception](https://stackoverflow.com/questions/11746499/solve-failed-to-lazily-initialize-a-collection-of-role-exception)   
+BUG：[多对多的关系需要在两边都add才会将关系存储到数据库中](https://www.callicoder.com/hibernate-spring-boot-jpa-many-to-many-mapping-example/)   
+BUG：多对多关系，如果已经存在，再重复插入到数据库的话会报错，[解决方法](https://stackoverflow.com/questions/41899628/jpa-hibernate-multiple-representations-of-the-same-entity)，查找关系，然后通过对比组的名字来判断关系是否已经被添加过，直接使用contains函数来判断，因为hashcode不同，程序不会认为即使两个信息一样的组事实上是一个组   
+BUG：[detached entity passed to persist](https://stackoverflow.com/questions/13370221/jpa-hibernate-detached-entity-passed-to-persist)   
+BUG：[object references an unsaved transient instance](http://aniyo.iteye.com/blog/2388671)，这个错误产生的原因是，级联保存的时候，Zu对象可能并没有在数据库中，这个时候保存User，系统不知道如何处理，解决办法：如果是new的Zu提前保存一下   
 
-java jpa 数据库调用逻辑：定义实体类，定义完之后有的比较简单的就直接DAO，有的会使用service来调用DAO，\***Repository可以将函数语句转换为数据库查询或者设置的语句，也就是jpa的作用，[jpa函数](https://www.cnblogs.com/dreamroute/p/5173896.html)，[jpa 有关命令和函数集合很清晰](https://www.jianshu.com/p/ff4839931c54) 
+java jpa 数据库调用逻辑：定义实体类，定义完之后有的比较简单的就直接DAO，有的会使用service来调用DAO，\***Repository可以将函数语句转换为数据库查询或者设置的语句，也就是jpa的作用，[jpa函数](https://www.cnblogs.com/dreamroute/p/5173896.html)，[jpa 有关命令和函数集合很清晰](https://www.jianshu.com/p/ff4839931c54)   
 
 一对多或者多对多关系的时候，设定的时候，给构造函数中添加对`set`或者`List`结构的初始化，多的那一方以set的形式存在的，被转换到表中 
 
